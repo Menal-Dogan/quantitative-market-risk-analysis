@@ -33,8 +33,8 @@ quantitative-market-risk-analysis/
 * **Rebalancing Assumption:** Daily constant-mix rebalancing (fixed target weights $w$), excluding transaction costs and slippage.
 * **Holding Period:** 1 trading day ($h = 1$).
 * **Missing Data Policy:** Geographical or calendar holiday gaps are handled strictly via causal forward-filling (`ffill()`), dropping initial incomplete rows (`dropna()`). Backward-filling (`bfill()`) is explicitly prohibited to prevent look-ahead bias.
-* **Estimation Windows:** Default rolling window of $W = 250$ trading days (~1 year), with sensitivity benchmarks at $W \in \{125, 250, 500\}$ days.
-* **Confidence Levels:** $1 - \alpha \in \{95\%, 99\%\}$, corresponding to tail exceedance probabilities $\alpha \in \{5\%, 1\%\}$.
+* **Estimation Windows:** Default rolling window of $W = 250$ trading days (~1 year), with sensitivity benchmarks at $W \in \lbrace 125, 250, 500 \rbrace$ days.
+* **Confidence Levels:** 95% and 99% ($1 - \alpha \in \lbrace 0.95, 0.99 \rbrace$), corresponding to tail exceedance probabilities of 5% and 1% ($\alpha \in \lbrace 0.05, 0.01 \rbrace$).
 
 ---
 
@@ -86,9 +86,9 @@ This violation is explicitly verified on a synthetic two-bond default distributi
 
 ### 3.5 Out-of-Sample Backtesting & Kupiec POF Test
 
-At each evaluation date $t \in \{W, \dots, T-1\}$, risk forecasts are estimated exclusively using the causal window of strictly prior losses, and a violation indicator is recorded when realized loss exceeds the forecast:
+At each evaluation date $t \in \lbrace W, \dots, T-1 \rbrace$, risk forecasts are estimated exclusively using the causal window of strictly prior losses, and a violation indicator is recorded when realized loss exceeds the forecast:
 
-$$\mathcal{F}_{t-1}^{(W)} = \{L_{t-W}, \dots, L_{t-1}\}, \qquad I_t = \mathbf{1}_{\{L_t > \widehat{\text{VaR}}_{t \mid t-1}\}} \in \{0, 1\}$$
+$$\mathcal{F}_{t-1}^{(W)} = \lbrace L_{t-W}, \dots, L_{t-1} \rbrace, \qquad I_t = \mathbf{1}_{\lbrace L_t > \widehat{\text{VaR}}_{t \mid t-1} \rbrace} \in \lbrace 0, 1 \rbrace$$
 
 Over $N$ out-of-sample days, let the observed violation count and empirical violation rate be:
 
@@ -119,18 +119,18 @@ python experiments.py
 
 ### 5.1 Distributional Diagnostics of Portfolio Losses
 
-* **Annualized Portfolio Return / Volatility:** $9.46\%$ / $12.23\%$ (Daily loss mean: $-0.0375\%$, daily volatility: $0.7704\%$).
-* **Max Difference Between Simple and Log Returns:** $0.001846$ ($18.5$ bps during the March 2020 market shock).
-* **Skewness of Losses:** $+0.4180$ (positive right-tail asymmetry in losses, equivalent to negative skewness in returns).
-* **Excess Kurtosis:** $+8.0771$ (strongly leptokurtic vs. Gaussian benchmark $0.0$).
-* **Normality Tests:** Jarque-Bera $= 4835.42$ ($p < 10^{-16}$); Shapiro-Wilk $W = 0.9217$ ($p = 2.62 \times 10^{-29}$). Normality is decisively rejected.
+* **Annualized Portfolio Return / Volatility:** 9.46% / 12.23% (Daily loss mean: -0.0375%, daily volatility: 0.7704%).
+* **Max Difference Between Simple and Log Returns:** 0.001846 (18.5 bps during the March 2020 market shock).
+* **Skewness of Losses:** +0.4180 (positive right-tail asymmetry in losses, equivalent to negative skewness in returns).
+* **Excess Kurtosis:** +8.0771 (strongly leptokurtic vs. Gaussian benchmark 0.0).
+* **Normality Tests:** Jarque-Bera = 4835.42 ($p < 10^{-16}$); Shapiro-Wilk $W = 0.9217$ ($p = 2.62 \times 10^{-29}$). Normality is decisively rejected.
 
 ### 5.2 Full-Sample Risk Estimates (Daily Relative Loss %)
 
 | Confidence Level | Historical VaR | Gaussian VaR | Historical ES | Gaussian ES |
 | :--- | :---: | :---: | :---: | :---: |
-| **95%** | $1.156\%$ | $1.230\%$ | $1.823\%$ | $1.552\%$ |
-| **99%** | $2.066\%$ | $1.755\%$ | $3.112\%$ | $2.016\%$ |
+| **95%** | 1.156% | 1.230% | 1.823% | 1.552% |
+| **99%** | 2.066% | 1.755% | 3.112% | 2.016% |
 
 ### 5.3 Out-of-Sample 1-Day-Ahead Backtest ($W = 250$, $N = 1,510$ OOS Days)
 
@@ -175,6 +175,6 @@ python experiments.py
 
 ## 7. Key Findings & Model Limitations
 
-1. **The 95% vs. 99% Gaussian Paradox:** At 95% confidence, Gaussian VaR ($1.230\%$) slightly exceeds Historical VaR ($1.156\%$) because leptokurtic distributions concentrate probability mass near the center and have narrower shoulders than a normal distribution with the same sample standard deviation. At 99% confidence, exponential tail decay ($e^{-z^2/2}$) severely underestimates tail risk: Gaussian VaR suffers **32 violations vs. 15.1 expected** ($2.12\%$, $p = 0.0001$) and is rejected by Kupiec's test, while Historical ES ($3.112\%$) exceeds Gaussian ES ($2.016\%$) by over $54\%$.
-2. **Estimation Window Trade-off & Ghost Effect:** A short window ($W = 125$) lacks sufficient tail observations for 99% quantile estimation, causing both models to fail ($p < 0.001$). Increasing $W$ to $250$ or $500$ stabilizes Historical VaR ($p = 0.2273$ and $0.5094$), but cannot rescue Gaussian VaR due to structural distributional misspecification. Furthermore, uniform weighting ($1/W$) in Historical Simulation induces a **ghost effect**: slow reaction at the onset of a crisis (March 2020) followed by an abrupt drop in VaR exactly $W$ days later when crisis shocks exit the window.
+1. **The 95% vs. 99% Gaussian Paradox:** At 95% confidence, Gaussian VaR (1.230%) slightly exceeds Historical VaR (1.156%) because leptokurtic distributions concentrate probability mass near the center and have narrower shoulders than a normal distribution with the same sample standard deviation. At 99% confidence, exponential tail decay ($e^{-z^2/2}$) severely underestimates tail risk: Gaussian VaR suffers **32 violations vs. 15.1 expected** (2.12%, $p = 0.0001$) and is rejected by Kupiec's test, while Historical ES (3.112%) exceeds Gaussian ES (2.016%) by over 54%.
+2. **Estimation Window Trade-off & Ghost Effect:** A short window ($W = 125$) lacks sufficient tail observations for 99% quantile estimation, causing both models to fail ($p < 0.001$). Increasing $W$ to 250 or 500 stabilizes Historical VaR ($p = 0.2273$ and $0.5094$), but cannot rescue Gaussian VaR due to structural distributional misspecification. Furthermore, uniform weighting ($1/W$) in Historical Simulation induces a **ghost effect**: slow reaction at the onset of a crisis (March 2020) followed by an abrupt drop in VaR exactly $W$ days later when crisis shocks exit the window.
 3. **Unconditional Backtesting Limitation:** Kupiec's POF test evaluates unconditional violation frequency but ignores temporal clustering of exceptions driven by volatility persistence.
